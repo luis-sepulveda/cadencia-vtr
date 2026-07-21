@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadencia de carga VTR</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#131a22; --panel2:#0f151c; --line:#22303c;
+    --ink:#e7eef5; --muted:#8aa0b2; --teal:#2dd4bf; --amber:#fbbf24;
+    --red:#f87171; --grid:#1b2530;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 80% -10%,#12202a 0%,var(--bg) 60%);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif; padding:32px 22px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--teal);margin:0 0 6px}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:30px;
+    letter-spacing:-.01em;margin:0}
+  .sub{color:var(--muted);font-size:14px;margin-top:6px}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;
+    flex-wrap:wrap;gap:14px;border-bottom:1px solid var(--line);padding-bottom:20px}
+  .stamp{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-align:right}
+  .stamp b{color:var(--ink)}
+
+  .hero{margin:26px 0;padding:30px 32px;border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(160deg,#16212b,#0f151c);position:relative;overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;
+    background:radial-gradient(500px 200px at 90% 0%,rgba(45,212,191,.12),transparent 70%)}
+  .hero .lbl{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);
+    letter-spacing:.05em;position:relative}
+  .bignum{font-family:'Space Grotesk',sans-serif;font-weight:700;line-height:1;
+    font-size:64px;margin:10px 0 4px;color:var(--amber);position:relative}
+  .bignum small{font-size:26px;color:var(--ink);font-weight:500}
+  .hero .ctx{color:var(--muted);font-size:14px;position:relative}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
+  .kpi{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
+  .kpi .n{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700}
+  .kpi .k{font-size:12px;color:var(--muted);margin-top:3px;letter-spacing:.02em}
+  .kpi.teal .n{color:var(--teal)}
+
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-top:8px}
+  .card{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px 22px}
+  .card h2{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:500;margin:0 0 16px;
+    display:flex;align-items:center;gap:9px}
+  .card h2:before{content:"";width:9px;height:9px;border-radius:2px;background:var(--teal)}
+  .tipo-row{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:14px}
+  .tipo-row .bar{height:8px;border-radius:4px;background:var(--teal);min-width:4px}
+  .tipo-row .name{width:150px;color:var(--ink)}
+  .tipo-row .val{margin-left:auto;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+  th{text-align:left;font-weight:500;color:var(--muted);font-size:11px;
+    text-transform:uppercase;letter-spacing:.08em;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--grid)}
+  td.ot{font-family:'JetBrains Mono',monospace;color:var(--teal)}
+  td.hora{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;
+    border:1px solid var(--line);color:var(--muted)}
+  .note{margin-top:22px;padding:14px 18px;border-left:3px solid var(--amber);
+    background:var(--panel2);border-radius:0 8px 8px 0;color:var(--muted);font-size:13px;line-height:1.6}
+  .note b{color:var(--ink)}
+  .franjas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .franja{border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    background:var(--panel2);position:relative;overflow:hidden}
+  .franja .rango{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--teal);
+    letter-spacing:.05em}
+  .franja .n{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;margin:6px 0 2px}
+  .franja .l{font-size:12px;color:var(--muted)}
+  .franja .fill{position:absolute;left:0;bottom:0;height:3px;background:var(--teal)}
+  @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}
+    .franjas{grid-template-columns:1fr}
+    .bignum{font-size:48px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Operación Claro VTR · Quilpué / Villa Alemana</p>
+      <h1>Cadencia de carga de trabajos</h1>
+      <p class="sub">Cada cuánto la plataforma VTR carga una petición nueva · solo fibra (NFTT / FTTH)</p>
+    </div>
+    <div class="stamp">Jornada <b id="dia"></b><br>Generado <span id="gen"></span></div>
+  </div>
+
+  <div class="hero">
+    <div class="lbl">Ritmo de carga de hoy</div>
+    <div class="bignum">1 <small>trabajo nuevo cada</small> <span id="cad"></span></div>
+    <div class="ctx" id="ctx"></div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi teal"><div class="n" id="k_incr"></div><div class="k">Trabajos nuevos hoy</div></div>
+    <div class="kpi"><div class="n" id="k_prim"></div><div class="k">Primera carga</div></div>
+    <div class="kpi"><div class="n" id="k_ult"></div><div class="k">Última carga</div></div>
+    <div class="kpi"><div class="n" id="k_vent"></div><div class="k">Ventana observada</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Trabajos nuevos por hora</h2>
+      <canvas id="chart" height="150"></canvas>
+    </div>
+    <div class="card">
+      <h2>Por tipo de actividad</h2>
+      <div id="tipos"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>Cargas nuevas por franja</h2>
+    <div class="franjas" id="franjas"></div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>Últimas cargas detectadas</h2>
+    <table>
+      <thead><tr><th>Hora</th><th>Petición (OT)</th><th>Tipo</th><th>Estado</th><th>Técnico</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>Cómo se mide:</b> el archivo se descarga cada ~15 min y se comparan las peticiones (OT)
+    contra la descarga anterior; las que no estaban se cuentan como nuevas, con la hora de detección.
+    <b id="baseline"></b> corresponden al stock que VTR ya tenía cargado al inicio de la jornada y
+    <b>no</b> entran en el cálculo del ritmo. La precisión es de ~15 min (el intervalo de muestreo).
+  </div>
+</div>
+
+<script>
+const D = {"dia": "21-07-2026", "generado": "21-07-2026 15:46", "cadencia_txt": "6.1 min", "cadencia_ok": true, "n_incr": 52, "n_base": 90, "primera": "08:15", "ultima": "13:30", "ventana_txt": "5 h 15 min", "horas": ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"], "vals": [0, 8, 6, 9, 10, 12, 7, 0], "por_tipo": {"Migración": 25, "Alta": 11, "Reparación": 11, "Modificación de Servicio": 4, "Upgrade promoción": 1}, "por_franja": {"10-13": 27, "13-16": 19, "16-19": 6}, "tabla": [{"hora": "13:30", "ot": "1-SIM28210051", "tipo": "Migración", "estado": "No Realizada", "tecnico": "MM_NFTT_DOMI_LEONEL HERNÁNDEZ OJE"}, {"hora": "13:30", "ot": "1-SIM28210050", "tipo": "Reparación", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_HERNAN CORTES HERRERA"}, {"hora": "13:15", "ot": "1-SIM28210049", "tipo": "Reparación", "estado": "Completado", "tecnico": "QA_B2B_MM_NFTT_DOMI_JOEL GUSTAVE GUSTA"}, {"hora": "13:15", "ot": "1-SIM28210047", "tipo": "Alta", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_JEAN ROODLY ORELIEN"}, {"hora": "13:15", "ot": "1-SIM28210048", "tipo": "Migración", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_JOSE PEREZ RANGEL"}, {"hora": "13:00", "ot": "1-SIM28210046", "tipo": "Modificación de Servicio", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_CRISTOBAL MIRANDA VALENC"}, {"hora": "13:00", "ot": "1-SIM28210045", "tipo": "Modificación de Servicio", "estado": "Iniciado", "tecnico": "MM_NFTT_DOMI_CESAR MENA OLIVEROS"}, {"hora": "12:45", "ot": "1-SIM28210044", "tipo": "Reparación", "estado": "Completado", "tecnico": "FS_MM_NFTT_DOMI_ALFREDO ALCAYAGA F"}, {"hora": "12:45", "ot": "1-SIM28210043", "tipo": "Reparación", "estado": "Cancelado", "tecnico": "V Quilpue"}, {"hora": "12:45", "ot": "1-SIM28210042", "tipo": "Reparación", "estado": "Cancelado", "tecnico": "V Quilpue"}, {"hora": "12:30", "ot": "1-SIM28210041", "tipo": "Migración", "estado": "Iniciado", "tecnico": "QA_B2B_MM_NFTT_DOMI_MATÍAS JAQUE AG"}, {"hora": "12:15", "ot": "1-SIM28210039", "tipo": "Migración", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_MATIAS CORNEJO D"}]};
+document.getElementById('dia').textContent = D.dia;
+document.getElementById('gen').textContent = D.generado;
+document.getElementById('cad').textContent = D.cadencia_txt;
+document.getElementById('k_incr').textContent = D.n_incr;
+document.getElementById('k_prim').textContent = D.primera;
+document.getElementById('k_ult').textContent = D.ultima;
+document.getElementById('k_vent').textContent = D.ventana_txt;
+document.getElementById('baseline').textContent = 'Las ' + D.n_base + ' peticiones iniciales';
+
+if(D.cadencia_ok){
+  document.getElementById('ctx').textContent =
+    D.n_incr + ' trabajos nuevos entre las ' + D.primera + ' y las ' + D.ultima +
+    ' (' + D.ventana_txt + ' de operación).';
+}else{
+  document.getElementById('cad').textContent = '—';
+  document.getElementById('ctx').textContent =
+    'Aún no hay suficientes descargas para calcular el ritmo (se necesitan al menos 2 cargas nuevas).';
+}
+
+// tipos
+const tw = document.getElementById('tipos');
+const tipos = Object.entries(D.por_tipo).sort((a,b)=>b[1]-a[1]);
+const maxT = tipos.length ? tipos[0][1] : 1;
+if(tipos.length===0){ tw.innerHTML = '<div style="color:#8aa0b2;font-size:13px">Sin datos aún.</div>'; }
+tipos.forEach(([name,val])=>{
+  const row=document.createElement('div'); row.className='tipo-row';
+  row.innerHTML = '<span class="name">'+name+'</span>'+
+    '<span class="bar" style="width:'+(20+130*val/maxT)+'px"></span>'+
+    '<span class="val">'+val+'</span>';
+  tw.appendChild(row);
+});
+
+// franjas
+const fw = document.getElementById('franjas');
+const etiquetas = {'10-13':'Mañana','13-16':'Mediodía','16-19':'Tarde','Otras':'Otras'};
+const fEntries = Object.entries(D.por_franja);
+const totF = fEntries.reduce((s,[,v])=>s+v,0) || 1;
+fEntries.forEach(([rango,val])=>{
+  const div=document.createElement('div'); div.className='franja';
+  div.innerHTML='<div class="rango">'+rango+'</div><div class="n">'+val+'</div>'+
+    '<div class="l">'+(etiquetas[rango]||'')+' · '+Math.round(100*val/totF)+'% del total</div>'+
+    '<div class="fill" style="width:'+(100*val/totF)+'%"></div>';
+  fw.appendChild(div);
+});
+
+// tabla
+const tb=document.getElementById('tbody');
+D.tabla.forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td class="hora">'+r.hora+'</td><td class="ot">'+r.ot+'</td>'+
+    '<td>'+r.tipo+'</td><td><span class="pill">'+r.estado+'</span></td>'+
+    '<td style="color:#8aa0b2">'+r.tecnico+'</td>';
+  tb.appendChild(tr);
+});
+
+// grafico
+new Chart(document.getElementById('chart'),{
+  type:'bar',
+  data:{labels:D.horas,datasets:[{data:D.vals,backgroundColor:'#2dd4bf',
+    borderRadius:5,barPercentage:.7}]},
+  options:{plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>c.parsed.y+' trabajos nuevos'}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#8aa0b2',font:{family:'JetBrains Mono'}}},
+      y:{beginAtZero:true,ticks:{color:'#8aa0b2',precision:0,stepSize:1},
+         grid:{color:'#1b2530'}}}}
+});
+</script>
+</body>
+</html>
