@@ -266,7 +266,7 @@ function render(D){
   const PUBLICACION_MIN = 2;
   const TOLERANCIA_MIN  = CADENCIA_MIN + PUBLICACION_MIN + 3;   // 10 min
   const RECARGA_SEG     = 60;   // cuando está atrasado, reintenta recargar cada 60s
-  const REFRESCO_MIN    = 3;    // vuelve a pedir datos.json cada 3 min
+  const REFRESCO_MIN    = 2;    // vuelve a pedir datos.json cada 2 min
 
   function parseGen(s){
     if(!s) return null;
@@ -321,19 +321,21 @@ function render(D){
     }
   }
 
-  // 1) refresco fijo cada REFRESCO_MIN, aunque el dato se vea fresco
-  setInterval(function(){
-    if(document.visibilityState === 'visible'){ recargar(); }
-  }, REFRESCO_MIN*60*1000);
+  // 1) refresco fijo cada REFRESCO_MIN. Antes solo corria con la pestaña
+  //    visible; ahora corre igual en segundo plano, asi al volver ya esta
+  //    al dia en vez de recien empezar a actualizar.
+  setInterval(recargar, REFRESCO_MIN*60*1000);
 
-  // 2) al volver a la pestaña, si esta atrasado refresca al toque
+  // 2) al volver a la pestaña, refresca SIEMPRE al toque (no solo si estaba
+  //    muy atrasada). Asi apenas la miras, ya tiene el ultimo dato.
   document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'visible' && tocaActualizar()){ recargar(); }
+    if(document.visibilityState === 'visible'){ recargar(); }
   });
 
-  // 3) si esta atrasado y la pestaña esta a la vista, reintenta cada RECARGA_SEG
+  // 3) red de seguridad: si por algun motivo quedo atrasada, reintenta
+  //    cada RECARGA_SEG aunque no cambie de pestaña.
   setInterval(function(){
-    if(tocaActualizar() && document.visibilityState === 'visible'){ recargar(); }
+    if(tocaActualizar()){ recargar(); }
   }, RECARGA_SEG*1000);
 })();
 
