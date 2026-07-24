@@ -156,8 +156,8 @@
   </div>
 
   <div class="note" style="margin-top:10px">
-    <b>Actualización:</b> automática cada 5 min desde TOA. El link que ven ustedes se demora 1 o 2
-    minutos más en actualizarse solo; si prefieren, lo pueden refrescar con <b>Ctrl + Shift + R</b>.
+    <b>Actualización:</b> automática. La página se refresca sola cada 3 min, sin recargar; puede
+    quedar hasta ~4 min atrás del último dato. Para verlo al instante, refresquen con <b>Ctrl + Shift + R</b>.
   </div>
 </div>
 
@@ -266,7 +266,7 @@ function render(D){
   const PUBLICACION_MIN = 2;
   const TOLERANCIA_MIN  = CADENCIA_MIN + PUBLICACION_MIN + 3;   // 10 min
   const RECARGA_SEG     = 60;   // cuando está atrasado, reintenta recargar cada 60s
-  const REFRESCO_MIN    = 6;    // recarga sola cada 6 min pase lo que pase
+  const REFRESCO_MIN    = 3;    // vuelve a pedir datos.json cada 3 min
 
   function parseGen(s){
     if(!s) return null;
