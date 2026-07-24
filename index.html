@@ -362,7 +362,9 @@ function render(D){
     // encabezados en español + filas
     const filas = D.todas.map(o => ({
       "Hora": o.hora,
+      "Franja": o.franja || "",
       "Orden (OT)": o.ot,
+      "Tipo": o.tipo || "",
       "Ciudad": o.ciudad || "",
       "Estado": o.estado,
       "Técnico": o.tecnico
@@ -370,7 +372,7 @@ function render(D){
 
     const ws = XLSX.utils.json_to_sheet(filas);
     // anchos de columna para que se lea comodo
-    ws['!cols'] = [{wch:8},{wch:16},{wch:16},{wch:14},{wch:34}];
+    ws['!cols'] = [{wch:8},{wch:18},{wch:16},{wch:22},{wch:16},{wch:14},{wch:34}];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Cargas nuevas");
