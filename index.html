@@ -162,80 +162,101 @@
 </div>
 
 <script>
-const D = {"dia": "24-07-2026", "generado": "24-07-2026 14:32", "cadencia_txt": "8.6 min", "cadencia_ok": true, "n_incr": 41, "n_base": 154, "primera": "08:38", "ultima": "14:06", "ventana_txt": "5 h 54 min", "ultima_revision": "14:32", "desde_ultima_txt": "26.0 min", "desde_ultima_min": 26.0, "hueco_txt": "52.1 min", "hueco_rango": "08:38 – 09:30", "horas": ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"], "vals": [0, 1, 2, 12, 13, 8, 4, 1, 0], "por_tipo": {"Alta": 16, "Reparación": 15, "Modificación de Servicio": 6, "Migración": 4}, "por_franja": {"10-13": 14, "13-16": 20, "16-19": 7}, "tabla": [{"hora": "14:06", "ot": "1-3MT37AA3", "tipo": "Migración", "estado": "Iniciado", "tecnico": "MM_NFTT_DOMI_RAFAEL VARGAS B"}, {"hora": "13:45", "ot": "1-3MT2OCIV", "tipo": "Alta", "estado": "Pendiente", "tecnico": "QA_B2B_MM_NFTT_DOMI_MARCO PEREZ G"}, {"hora": "13:45", "ot": "1-3MT2GM6H", "tipo": "Modificación de Servicio", "estado": "Iniciado", "tecnico": "QA_MM_NFTT_DOMI_JOSE SALAS MEDINA"}, {"hora": "13:19", "ot": "1-3MT25ONR", "tipo": "Alta", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_CRISTOBAL SILVA LEIVA"}, {"hora": "13:09", "ot": "1-3MSZY5VL", "tipo": "Migración", "estado": "Pendiente", "tecnico": "FS_MM_NFTT_DOMI_LUIS CASTRO TORRES"}, {"hora": "12:59", "ot": "1-3MT1EE13", "tipo": "Alta", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_KEVIN TAPIA RETAMAL"}, {"hora": "12:53", "ot": "1-3MRD10KC", "tipo": "Migración", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_MATIAS APELEO APELEO"}, {"hora": "12:48", "ot": "1-3MS8HPY7", "tipo": "Alta", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_FELIPE SILVA R"}, {"hora": "12:43", "ot": "1-3MT121DE", "tipo": "Alta", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_JEAN ROODLY ORELIEN"}, {"hora": "12:43", "ot": "1-3MT0YB46", "tipo": "Alta", "estado": "Iniciado", "tecnico": "FS_MM_NFTT_DOMI_LUIS CASTRO TORRES"}, {"hora": "12:17", "ot": "1-3MSBSOEA", "tipo": "Reparación", "estado": "Pendiente", "tecnico": "MM_NFTT_DOMI_JORGE PEZOA VICUÑA"}, {"hora": "12:17", "ot": "1-3MT08336", "tipo": "Reparación", "estado": "Iniciado", "tecnico": "QA_B2B_MM_NFTT_DOMI_MARCO PEREZ G"}]};
-document.getElementById('dia').textContent = D.dia;
-document.getElementById('gen').textContent = D.generado;
-document.getElementById('k_incr').textContent = D.n_incr;
-document.getElementById('k_prim').textContent = D.primera;
-document.getElementById('k_ult').textContent = D.ultima;
-document.getElementById('k_vent').textContent = D.ventana_txt;
-document.getElementById('baseline').textContent = 'Las ' + D.n_base + ' peticiones iniciales';
+// ====================================================================
+//  Los datos ya NO vienen incrustados en este HTML: se piden aparte a
+//  'datos.json', que es lo unico que cambia cada 5 min. Asi el HTML
+//  queda fijo y GitHub Pages no tiene que re-publicar la pagina en cada
+//  actualizacion (eso era lo que hacia que el link se quedara pegado).
+//
+//  D empieza en null y se llena cuando llega el JSON. Todo el pintado
+//  vive dentro de render(D), que se puede llamar cuantas veces haga
+//  falta cuando entran datos nuevos.
+// ====================================================================
+let D = null;
+let grafico = null;   // referencia al Chart, para no apilar uno sobre otro
 
-// chips: última carga / última revisión
-(function(){
+function render(D){
+  document.getElementById('dia').textContent = D.dia;
+  document.getElementById('gen').textContent = D.generado;
+  document.getElementById('k_incr').textContent = D.n_incr;
+  document.getElementById('k_prim').textContent = D.primera;
+  document.getElementById('k_ult').textContent = D.ultima;
+  document.getElementById('k_vent').textContent = D.ventana_txt;
+  document.getElementById('baseline').textContent = 'Las ' + D.n_base + ' peticiones iniciales';
+
+  // chips: última carga / última revisión
   const cw = document.getElementById('chips');
   function chip(lab, val, warn){
     return '<div class="chip'+(warn?' warn':'')+'"><span class="dot"></span>'+
            '<span class="lab">'+lab+'</span><span class="val">'+val+'</span></div>';
   }
-  let html = '';
+  let chipsHtml = '';
   if(D.desde_ultima_min !== null){
     const alerta = D.desde_ultima_min >= 20;   // 20+ min sin ingresos -> amarillo
     const txt = D.desde_ultima_min < 1 ? 'recién' : 'hace ' + D.desde_ultima_txt;
-    html += chip('Última carga', txt, alerta);
+    chipsHtml += chip('Última carga', txt, alerta);
   }
-  html += chip('Última revisión', D.ultima_revision, false);
-  cw.innerHTML = html;
-})();
+  chipsHtml += chip('Última revisión', D.ultima_revision, false);
+  cw.innerHTML = chipsHtml;
 
-// tipos
-const tw = document.getElementById('tipos');
-const tipos = Object.entries(D.por_tipo).sort((a,b)=>b[1]-a[1]);
-const maxT = tipos.length ? tipos[0][1] : 1;
-if(tipos.length===0){ tw.innerHTML = '<div style="color:#8aa0b2;font-size:13px">Sin datos aún.</div>'; }
-tipos.forEach(([name,val])=>{
-  const row=document.createElement('div'); row.className='tipo-row';
-  row.innerHTML = '<span class="name">'+name+'</span>'+
-    '<span class="bar" style="width:'+(20+130*val/maxT)+'px"></span>'+
-    '<span class="val">'+val+'</span>';
-  tw.appendChild(row);
-});
+  // tipos
+  const tw = document.getElementById('tipos');
+  tw.innerHTML = '';
+  const tipos = Object.entries(D.por_tipo).sort((a,b)=>b[1]-a[1]);
+  const maxT = tipos.length ? tipos[0][1] : 1;
+  if(tipos.length===0){ tw.innerHTML = '<div style="color:#8aa0b2;font-size:13px">Sin datos aún.</div>'; }
+  tipos.forEach(([name,val])=>{
+    const row=document.createElement('div'); row.className='tipo-row';
+    row.innerHTML = '<span class="name">'+name+'</span>'+
+      '<span class="bar" style="width:'+(20+130*val/maxT)+'px"></span>'+
+      '<span class="val">'+val+'</span>';
+    tw.appendChild(row);
+  });
 
-// franjas
-const fw = document.getElementById('franjas');
-const etiquetas = {'10-13':'Mañana','13-16':'Mediodía','16-19':'Tarde','Otras':'Otras'};
-const fEntries = Object.entries(D.por_franja);
-const totF = fEntries.reduce((s,[,v])=>s+v,0) || 1;
-fEntries.forEach(([rango,val])=>{
-  const div=document.createElement('div'); div.className='franja';
-  div.innerHTML='<div class="rango">'+rango+'</div><div class="n">'+val+'</div>'+
-    '<div class="l">'+(etiquetas[rango]||'')+' · '+Math.round(100*val/totF)+'% del total</div>'+
-    '<div class="fill" style="width:'+(100*val/totF)+'%"></div>';
-  fw.appendChild(div);
-});
+  // franjas
+  const fw = document.getElementById('franjas');
+  fw.innerHTML = '';
+  const etiquetas = {'10-13':'Mañana','13-16':'Mediodía','16-19':'Tarde','Otras':'Otras'};
+  const fEntries = Object.entries(D.por_franja);
+  const totF = fEntries.reduce((s,[,v])=>s+v,0) || 1;
+  fEntries.forEach(([rango,val])=>{
+    const div=document.createElement('div'); div.className='franja';
+    div.innerHTML='<div class="rango">'+rango+'</div><div class="n">'+val+'</div>'+
+      '<div class="l">'+(etiquetas[rango]||'')+' · '+Math.round(100*val/totF)+'% del total</div>'+
+      '<div class="fill" style="width:'+(100*val/totF)+'%"></div>';
+    fw.appendChild(div);
+  });
 
-// tabla
-const tb=document.getElementById('tbody');
-D.tabla.forEach(r=>{
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td class="hora">'+r.hora+'</td><td class="ot">'+r.ot+'</td>'+
-    '<td>'+r.tipo+'</td><td><span class="pill">'+r.estado+'</span></td>'+
-    '<td style="color:#8aa0b2">'+r.tecnico+'</td>';
-  tb.appendChild(tr);
-});
+  // tabla
+  const tb=document.getElementById('tbody');
+  tb.innerHTML = '';
+  D.tabla.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td class="hora">'+r.hora+'</td><td class="ot">'+r.ot+'</td>'+
+      '<td>'+r.tipo+'</td><td><span class="pill">'+r.estado+'</span></td>'+
+      '<td style="color:#8aa0b2">'+r.tecnico+'</td>';
+    tb.appendChild(tr);
+  });
 
-// grafico
-new Chart(document.getElementById('chart'),{
-  type:'bar',
-  data:{labels:D.horas,datasets:[{data:D.vals,backgroundColor:'#2dd4bf',
-    borderRadius:5,barPercentage:.7}]},
-  options:{plugins:{legend:{display:false},
-    tooltip:{callbacks:{label:c=>c.parsed.y+' trabajos nuevos'}}},
-    scales:{
-      x:{grid:{display:false},ticks:{color:'#8aa0b2',font:{family:'JetBrains Mono'}}},
-      y:{beginAtZero:true,ticks:{color:'#8aa0b2',precision:0,stepSize:1},
-         grid:{color:'#1b2530'}}}}
-});
+  // grafico: si ya existe, solo le cambio los datos (no creo otro encima)
+  if(grafico){
+    grafico.data.labels = D.horas;
+    grafico.data.datasets[0].data = D.vals;
+    grafico.update();
+  } else {
+    grafico = new Chart(document.getElementById('chart'),{
+      type:'bar',
+      data:{labels:D.horas,datasets:[{data:D.vals,backgroundColor:'#2dd4bf',
+        borderRadius:5,barPercentage:.7}]},
+      options:{plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.parsed.y+' trabajos nuevos'}}},
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#8aa0b2',font:{family:'JetBrains Mono'}}},
+          y:{beginAtZero:true,ticks:{color:'#8aa0b2',precision:0,stepSize:1},
+             grid:{color:'#1b2530'}}}}
+    });
+  }
+}
 
 // ---- estado de actualización (destella si se cortó la cadencia) ----
 (function(){
@@ -255,6 +276,7 @@ new Chart(document.getElementById('chart'),{
     return new Date(yyyy, mm-1, dd, hh||0, mi||0);
   }
   function minutosDesdeGen(){
+    if(!D) return null;                 // todavia no llega el primer JSON
     const gen = parseGen(D.generado);
     if(!gen) return null;
     return Math.floor((Date.now() - gen.getTime())/60000);
@@ -282,11 +304,21 @@ new Chart(document.getElementById('chart'),{
   setInterval(pintar, 5000);
 
   // ---- recarga automatica ----
-  // GitHub Pages cachea el HTML: hay que pedirlo con ?t= para que traiga el nuevo.
-  function recargar(){
-    const u = new URL(location.href);
-    u.searchParams.set('t', Date.now());
-    location.replace(u.toString());
+  // Ya NO recargamos la pagina entera. Solo volvemos a pedir datos.json.
+  // El ?t= es para saltarse el cache de 5 min de raw.githubusercontent;
+  // sin eso el navegador nos devolveria el JSON viejo.
+  async function recargar(){
+    try{
+      const r = await fetch('datos.json?t=' + Date.now(), {cache:'no-store'});
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      D = await r.json();
+      render(D);
+      pintar();
+    }catch(e){
+      // si falla (sin red, JSON a medio subir), no rompo nada: dejo lo
+      // ultimo que se vio y el semaforo se ira poniendo 'stale' solo.
+      console.warn('No pude refrescar datos.json:', e.message);
+    }
   }
 
   // 1) refresco fijo cada REFRESCO_MIN, aunque el dato se vea fresco
@@ -294,7 +326,7 @@ new Chart(document.getElementById('chart'),{
     if(document.visibilityState === 'visible'){ recargar(); }
   }, REFRESCO_MIN*60*1000);
 
-  // 2) al volver a la pestaña, si esta atrasado recarga al toque
+  // 2) al volver a la pestaña, si esta atrasado refresca al toque
   document.addEventListener('visibilitychange', function(){
     if(document.visibilityState === 'visible' && tocaActualizar()){ recargar(); }
   });
@@ -303,6 +335,20 @@ new Chart(document.getElementById('chart'),{
   setInterval(function(){
     if(tocaActualizar() && document.visibilityState === 'visible'){ recargar(); }
   }, RECARGA_SEG*1000);
+})();
+
+// ---- carga inicial: traer datos.json apenas abre la pagina ----
+(async function(){
+  try{
+    const r = await fetch('datos.json?t=' + Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    D = await r.json();
+    render(D);
+  }catch(e){
+    document.getElementById('stxt').textContent = 'No se pudo cargar datos.json';
+    document.getElementById('status').className = 'status stale';
+    console.error('Error cargando datos.json:', e);
+  }
 })();
 </script>
 </body>
