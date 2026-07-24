@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadencia de carga VTR</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -72,6 +73,11 @@
   .card h2{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:500;margin:0 0 16px;
     display:flex;align-items:center;gap:9px}
   .card h2:before{content:"";width:9px;height:9px;border-radius:2px;background:var(--teal)}
+  #btn-descargar{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+    color:#06231f;background:var(--teal);border:none;border-radius:9px;
+    padding:9px 16px;cursor:pointer;transition:.15s;white-space:nowrap}
+  #btn-descargar:hover{background:#5ee9d5}
+  #btn-descargar:disabled{opacity:.5;cursor:default}
   .tipo-row{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:14px}
   .tipo-row .bar{height:8px;border-radius:4px;background:var(--teal);min-width:4px}
   .tipo-row .name{width:150px;color:var(--ink)}
@@ -141,7 +147,10 @@
   </div>
 
   <div class="card" style="margin-top:18px">
-    <h2>Últimas cargas detectadas</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <h2 style="margin:0">Últimas cargas detectadas</h2>
+      <button id="btn-descargar">⬇ Descargar reporte del día</button>
+    </div>
     <table>
       <thead><tr><th>Hora</th><th>Petición (OT)</th><th>Tipo</th><th>Estado</th><th>Técnico</th></tr></thead>
       <tbody id="tbody"></tbody>
@@ -156,8 +165,8 @@
   </div>
 
   <div class="note" style="margin-top:10px">
-    <b>Actualización:</b> automática. La página se refresca sola cada 3 min, sin recargar; puede
-    quedar hasta ~4 min atrás del último dato. Para verlo al instante, refresquen con <b>Ctrl + Shift + R</b>.
+    <b>Actualización:</b> automática. La página se refresca sola cada 2 min, sin recargar; puede
+    quedar hasta ~3 min atrás del último dato. Para verlo al instante, refresquen con <b>Ctrl + Shift + R</b>.
   </div>
 </div>
 
@@ -339,7 +348,40 @@ function render(D){
   }, RECARGA_SEG*1000);
 })();
 
-// ---- carga inicial: traer datos.json apenas abre la pagina ----
+// ---- descargar reporte del día en Excel ----
+(function(){
+  const btn = document.getElementById('btn-descargar');
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    // usa lo ULTIMO que cargó la página (D), asi el reporte siempre está al día
+    if(!D || !D.todas || !D.todas.length){
+      alert('Todavía no hay cargas nuevas para descargar hoy.');
+      return;
+    }
+
+    // encabezados en español + filas
+    const filas = D.todas.map(o => ({
+      "Hora": o.hora,
+      "Orden (OT)": o.ot,
+      "Ciudad": o.ciudad || "",
+      "Estado": o.estado,
+      "Técnico": o.tecnico
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(filas);
+    // anchos de columna para que se lea comodo
+    ws['!cols'] = [{wch:8},{wch:16},{wch:16},{wch:14},{wch:34}];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cargas nuevas");
+
+    // nombre: cadencia_24-07-2026.xlsx (con la fecha de la jornada)
+    const dia = (D.dia || 'hoy').replace(/\//g, '-');
+    XLSX.writeFile(wb, `cadencia_${dia}.xlsx`);
+  });
+})();
+
+
 (async function(){
   try{
     const r = await fetch('datos.json?t=' + Date.now(), {cache:'no-store'});
