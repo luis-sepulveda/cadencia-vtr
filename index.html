@@ -91,6 +91,14 @@
   td.hora{font-family:'JetBrains Mono',monospace;color:var(--muted)}
   .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;
     border:1px solid var(--line);color:var(--muted)}
+  /* chip de franja: color distinto por bloque, para ubicarlas de un vistazo */
+  .fr{display:inline-block;padding:2px 8px;border-radius:6px;white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid transparent}
+  .fr-f1{color:#2dd4bf;background:#0d1c18;border-color:#1f5a4e}
+  .fr-f2{color:#fbbf24;background:#1c1708;border-color:#5a4a1e}
+  .fr-f3{color:#a78bfa;background:#161327;border-color:#3f3466}
+  .fr-f4{color:#f87171;background:#1f1010;border-color:#5a2626}
+  .fr-f0{color:var(--muted);background:var(--panel);border-color:var(--line)}
   .note{margin-top:22px;padding:14px 18px;border-left:3px solid var(--amber);
     background:var(--panel2);border-radius:0 8px 8px 0;color:var(--muted);font-size:13px;line-height:1.6}
   .note b{color:var(--ink)}
@@ -152,7 +160,7 @@
       <button id="btn-descargar">⬇ Descargar reporte del día</button>
     </div>
     <table>
-      <thead><tr><th>Hora</th><th>Petición (OT)</th><th>Tipo</th><th>Estado</th><th>Técnico</th></tr></thead>
+      <thead><tr><th>Hora</th><th>Franja</th><th>Petición (OT)</th><th>Tipo</th><th>Estado</th><th>Técnico</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -239,9 +247,14 @@ function render(D){
   // tabla
   const tb=document.getElementById('tbody');
   tb.innerHTML = '';
+  const clsFranja = {'10-13':'f1','13-16':'f2','16-19':'f3','19-21':'f4'};
   D.tabla.forEach(r=>{
+    const fr = r.franja || 'Sin franja';
+    const cls = clsFranja[fr] || 'f0';
     const tr=document.createElement('tr');
-    tr.innerHTML='<td class="hora">'+r.hora+'</td><td class="ot">'+r.ot+'</td>'+
+    tr.innerHTML='<td class="hora">'+r.hora+'</td>'+
+      '<td><span class="fr fr-'+cls+'">'+fr+'</span></td>'+
+      '<td class="ot">'+r.ot+'</td>'+
       '<td>'+r.tipo+'</td><td><span class="pill">'+r.estado+'</span></td>'+
       '<td style="color:#8aa0b2">'+r.tecnico+'</td>';
     tb.appendChild(tr);
