@@ -94,7 +94,7 @@
   .note{margin-top:22px;padding:14px 18px;border-left:3px solid var(--amber);
     background:var(--panel2);border-radius:0 8px 8px 0;color:var(--muted);font-size:13px;line-height:1.6}
   .note b{color:var(--ink)}
-  .franjas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .franjas{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
   .franja{border:1px solid var(--line);border-radius:12px;padding:16px 18px;
     background:var(--panel2);position:relative;overflow:hidden}
   .franja .rango{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--teal);
@@ -225,7 +225,7 @@ function render(D){
   // franjas
   const fw = document.getElementById('franjas');
   fw.innerHTML = '';
-  const etiquetas = {'10-13':'Mañana','13-16':'Mediodía','16-19':'Tarde','Otras':'Otras'};
+  const etiquetas = {'10-13':'Mañana','13-16':'Mediodía','16-19':'Tarde','19-21':'Noche','Otras':'Otras'};
   const fEntries = Object.entries(D.por_franja);
   const totF = fEntries.reduce((s,[,v])=>s+v,0) || 1;
   fEntries.forEach(([rango,val])=>{
