@@ -280,6 +280,15 @@ function render(D){
   }
 }
 
+// El datos.json ya NO vive en el repo de Pages: lo publica monitor_descarga.py
+// en Datos.avance (repo sin Pages), asi cadencia-vtr no recibe commits y deja
+// de encolar builds. Se lee por raw y no por api.github.com porque la API sin
+// token da 60 peticiones/hora POR IP: entre el refresco de 2 min y el reintento
+// de 60s, dos pestanas en la misma oficina ya la reventarian. raw no tiene ese
+// limite, y su cache de CDN se salta con el ?t= que se agrega mas abajo.
+// OJO: va en ambito GLOBAL, fuera de los IIFE, porque la usan los DOS fetch.
+const URL_DATOS = 'https://raw.githubusercontent.com/luis-sepulveda/Datos.avance/main/cadencia/datos.json';
+
 // ---- estado de actualización (destella si se cortó la cadencia) ----
 (function(){
   // Cadencia real: descarga cada 5 min desde TOA + 1-2 min de publicación.
@@ -331,7 +340,7 @@ function render(D){
   // sin eso el navegador nos devolveria el JSON viejo.
   async function recargar(){
     try{
-      const r = await fetch('datos.json?t=' + Date.now(), {cache:'no-store'});
+      const r = await fetch(URL_DATOS + '?t=' + Date.now(), {cache:'no-store'});
       if(!r.ok) throw new Error('HTTP ' + r.status);
       D = await r.json();
       render(D);
@@ -399,7 +408,7 @@ function render(D){
 
 (async function(){
   try{
-    const r = await fetch('datos.json?t=' + Date.now(), {cache:'no-store'});
+    const r = await fetch(URL_DATOS + '?t=' + Date.now(), {cache:'no-store'});
     if(!r.ok) throw new Error('HTTP ' + r.status);
     D = await r.json();
     render(D);
